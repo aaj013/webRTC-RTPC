@@ -1,0 +1,16 @@
+/*styles for web page*/
+
+textarea {
+    resize: none;
+    height:400;
+    width:400;
+    overflow: scroll;
+}
+
+input{
+     margin-top:5px;
+}
+
+ul.LinkedList { display: block; }
+ul.LinkedList ul { display: none; } 
+  .HandCursorStyle { cursor: pointer; cursor: hand; } 

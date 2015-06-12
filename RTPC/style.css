@@ -1,0 +1,193 @@
+@font-face {
+	font-family: 'SansationLight';
+	src: url('./SansationLight.eot');
+	src: local('SansationLight'), url('./SansationLight.woff') format('woff'), url('./SansationLight.ttf') format('truetype');
+}
+/* use this class to attach this font to any element i.e. <p class="fontsforweb_fontid_423">Text with this font applied</p> */
+body,div,.call-button,#msg-submit,#msg-input,#add-user-input,#add-user-submit,#logout,#create-group,#select-group,.font,#browse-file,#save,#editor,.save,.file-options,#select-path,.butn{
+	font-family: 'SansationLight' !important;
+}
+hr{
+	border-color:white;
+}
+.border{
+	border:1px solid black;
+}
+#msg-container{	
+	width:240px;
+	height:140px;
+	padding:3px;
+	overflow:scroll;
+}
+#msg-input{
+	width:135px;
+	height:30px;
+	padding:2px;
+	font-size: 13px;
+	padding-left: 5px;
+
+}
+#msg-input:focus,#add-user-input:focus{
+	background: #bdc3c7;
+}
+body{
+	background:lavender; 
+}
+#chat-box{
+	width:250px;
+	height:410px;
+	float: left;
+	visibility: hidden;
+	background: white;
+}
+#chat-head{
+	width:150px:
+	height:50px;
+	padding:3px;
+	color: white;
+	background: #27ae60;
+}
+#msg-bottom{
+	position:relative;
+	bottom:0px;
+}
+#msg-submit,#logout,#create-group,#browse-file,#save,.save,.file-options,#select-path,.call-button,.butn{
+	border: 1px solid black;
+	font-size: 13px;
+	background-color :#2980b9;
+	color:white;
+		height: 30px;
+
+}
+#msg-submit:hover,#add-user-submit:hover,#logout:hover,#create-group:hover,#browse-file:hover,#select-path:hover,.save:hover,.butn:hover,.file-options:hover,.call-button:hover{
+	background-color :#27ae60;
+	color:white;
+	border:1px solid black;
+	height: 30px;
+}
+.call-button{
+	margin:5px;
+}
+#close-chat,.close{
+	border: 1px solid black;
+	background:white;
+	font-size: 13px;
+	padding:2px;
+	width:25px;
+}
+#close-chat:hover,.close:hover{
+	border: 1px solid black;
+	background: red;
+	color:white;
+}
+#chat-list-box{
+	float:left;
+	width:250px;
+	height:410px;
+	margin-left: 5px;
+	background:white;
+}
+#chat-list{
+	overflow: scroll;	
+	width:250px;
+	height:370px;
+}
+.chat-user:hover{
+	background:#2980b9;
+
+}
+#user-name{
+	font-size:15px; 
+}
+#add-user-input{
+	width:150px;
+	height:30px;
+	font-size: 13px;
+	padding: 2px;
+	margin: 2px;
+	width: 120px;
+	padding-left: 5px;
+}
+#add-user-submit{
+	width: 80px;
+	height: 30px;
+	background-color :#2980b9;
+	font-size: 13px;
+	color: white;
+	border: 1px solid black;
+}
+#chat-wrapper{
+	position: fixed;
+    bottom: 0px;
+    right: 0px;
+    margin:10px; 
+}
+#logout,#create-group{
+	width:auto;
+	height:30px;
+	margin-right: 20px;
+}
+#popup{
+	opacity:0.4;
+	position:fixed;
+	margin-left:auto;
+	margin-right:auto;
+	background:black;
+	width:100%;
+	height:100%;
+	left:0px;
+	top:0px;
+}
+#select-group{
+	width:100px;
+	height:30px;
+}
+.groups{
+	width:100px;
+	height:25px;
+	background:white;
+	border: 1px solid black;
+}
+.groups:focus{
+	background:lavender;
+}
+#group-name{
+	margin-bottom: 5px;
+}
+#browse-file{
+	height:30px;
+	width:90px;
+	margin: 5px;
+}
+#save,.save,.file-options{
+	border:1px solid black;
+	width:70px;
+	height:30px;
+	margin:5px;
+	margin-top:0px;
+}
+#notification{
+	position: fixed;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background:#8e44ad;
+    color:white;
+    padding:5px;
+    margin:0px;
+    border: 1px solid black;
+}
+.file-options{
+	visibility: hidden;
+}
+
+#root-name{
+	background:#c0392b;
+	color:white;
+	padding:3px;
+	word-wrap:break-word;
+	
+}
+#logout:disabled{
+	background: grey;
+}
+/* Font downloaded from FontsForWeb.com */

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Peer</title>
+        <script src='peer.js'></script>
+        <script src='func.js'></script>
+    </head>
+    <body>
+    </body>
+</html>

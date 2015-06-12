@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>RTMCC</title>
+        <link rel="stylesheet" type="text/css" href="css/style.css" />
+        <link rel="icon" type="image/png" href="img/fav_icon.png">
+        <script type="text/javascript" src='js/peer.js'></script>
+        <script type="text/javascript" src='js/main.js'></script>
+        <script type="text/javascript" src='js/func.js'></script>
+        <script type="text/javascript" src='js/jquery.js'></script>
+    </head>
+    <body>
+        <div>
+            <input type="text" placeholder="Enter your ID" id='send_id'/>
+            <input type="button"  value="Connect" onclick="peer.initID(document.getElementById('send_id').value,this)"/>
+        </div>
+        <div>
+            <input type="text" placeholder="Enter Reciever  Id" id='recv_id'/>
+            <input type="text" placeholder="Enter message" id='msg_box'/>
+            <input type="button" value="Send" onclick="peer.send('msg',document.getElementById('msg_box').value,document.getElementById('recv_id').value)"/>
+            <input type="button" value="Recieve" onclick="peer.recieve()"/>       
+            <label id='result'><label/>
+        </div>
+    </body>
+</html>

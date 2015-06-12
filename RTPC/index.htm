@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>RTMCC</title>
+    <link rel="icon" type="image/png" href="images/fav_icon.png">    
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="dist/themes/default/style.min.css" />
+	<link rel="stylesheet" type="text/css" href="easyui.css">
+	<link rel="stylesheet" type="text/css" href="icon.css">
+	
+	<script src="js/main/jquery.js"></script>
+	<script src="js/main/peer.js"></script>
+		<script src="js/main/main.js"></script>
+
+	<script src="dist/jstree.min.js"></script>
+	<script type="text/javascript" src="jquery.easyui.min.js"></script>
+
+</head>
+<body onload="addGroupChangeListener()">
+	<script>
+		rootPath=null;
+
+		function addTab(title,content){
+			if ($('#tt').tabs('exists', title)){
+				$('#tt').tabs('select', title);
+				var editor=document.getElementById("editor-"+title);
+				editor.value=content;
+
+			} else {
+
+				var content = "<div><textarea class='border' id='editor-"+title+"' style='resize:none;width:98%;margin:5px;height:85%'>"+content+"</textarea><input type='button'  class='save' id='button-"+title+"' value='Save' id='save'></div>";
+				$('#tt').tabs('add',{
+					title:title,
+					content:content,
+					closable:true
+				});
+				var editor=document.getElementById("editor-"+title);
+				console.log(typeof(editor.value) + " " + editor.value);
+				document.getElementById("button-"+title).addEventListener("click",function(){
+				var path=filePath;
+				content=encodeURIComponent(editor.value);
+ 				$.post("http://localhost:8000",{"name":path,"content":content,"command":"write",type:"file"}, function(data){      	
+		    		console.log("recieved: "+data);
+		    		var res=document.getElementById("notification");
+
+		    		res.innerHTML="file '"+filePath+"' saved successfully";
+
+				});
+				});
+			}
+		}
+
+	parentPath=null;
+	filePath=null;
+
+	function file(id,parent,text,icon){
+		this.id=id;
+		this.parent=parent;
+        this.text=text;
+		this.icon=icon;
+
+	}
+	function addFile(group,file){
+    	group.core.data.push(file);
+	}
+
+	function addTomanifest(path,name){			
+		    $.post("http://localhost:8000",{"name":path+"/manifest.json","content":"","command":"read",type:"file"}, function(data){      	
+		    	console.log("recieved: "+data);
+		    	manifest=JSON.parse(data);
+		    	manifest.push(name);
+		    	$.post("http://localhost:8000",{"name":path+"/manifest.json","content":JSON.stringify(manifest),"command":"write",type:"file"}, function(data){      	
+		    		console.log("recieved: "+data);
+		    	});
+			});
+	}
+
+	function sendProjectJSON(groupname,toID){
+		    $.post("http://localhost:8000",{"name":rootPath+groupname+"/"+groupname+".json","content":JSON.stringify(group),"command":"read",type:"file"}, function(data){      	
+		    	console.log("recieved: "+data);
+
+			});
+	}
+
+
+	function createProject(path,name){
+	    $.post("http://localhost:8000",{"name":path+"/"+name,"content":"","command":"write","type":"folder"}, function(data){      	
+	    	console.log("recieved: "+data);
+	    	var group=new Object();
+		    group.core=new Object();
+	    	group.core.data=[];
+	    	var f=new file(path+"/"+name,"#",name,"images/folder.png"); 
+	    	addFile(group,f);
+		    $.post("http://localhost:8000",{"name":path+"/"+name+"/"+name+".json","content":JSON.stringify(group),"command":"write",type:"file"}, function(data){      	
+		    	console.log("recieved: "+data);
+		    	$.post("http://localhost:8000",{"name":path+"/"+name+"/"+name+".json","content":"","command":"read",type:"file"}, function(data){
+	    				loadTree(JSON.parse(data));
+	    				addTomanifest(path,name);
+	    				console.log("status: "+"loading file tree");
+	    		});
+		    });	    
+	    });
+						//{ "id" : "root/child1/nest", "parent" : "root/child1", "text" : "nest","content":"nested content" ,"icon":"./fileico.png"}
+	}
+	function requestContents(){
+		prompt();
+	}
+
+	function loadTree(json) {
+		group=document.getElementById('group-name').innerHTML;
+	   	var req_content=document.getElementById("req-content");
+   		req_content.style.visibility="visible";	
+		console.log(group);
+		data=json.core.data;
+
+		$('#wrapper').jstree("destroy");
+		$('#wrapper').jstree(json);
+		$('#wrapper').on('changed.jstree', function (e, data) {
+		var create=document.getElementById("create-file");
+		var rename=document.getElementById("rename-file");
+		var deletef=document.getElementById("delete-file");		
+
+		group=document.getElementById('group-name').innerHTML;
+
+
+		if(data.instance.get_node(data.selected[0]).icon=="images/fileico.png"){
+			parentPath=data.instance.get_node(data.selected[0]).parent;
+			filePath=data.instance.get_node(data.selected[0]).id;
+			rename.style.visibility="visible";
+			deletef.style.visibility="visible";
+			create.style.visibility="hidden";
+			$.post("http://localhost:8000",{"name":filePath,"content":"","command":"read","type":"file" },function(data){
+	         			console.log("recieved:"+data);	        
+						addTab(group,data);
+			});
+		}
+		else{
+			create.style.visibility="visible";
+			rename.style.visibility="visible";
+			deletef.style.visibility="visible";
+			parentPath=data.instance.get_node(data.selected[0]).id;
+			filePath=data.instance.get_node(data.selected[0]).id;
+			console.log("parent "+parentPath);
+		}
+		});
+								
+	}
+
+
+	function addJSON(group,name,json){
+		if(fileJSON[group+":"+name]==undefined){
+			fileJSON[group+":"+name]=json;
+			console.log("added as"+group+":"+name+"json:" +json);
+		}
+	}
+
+
+	function createFile(){
+		var name = prompt("Enter file/folder name: ", "");
+		if (name != null) {
+			name = name.trim();
+			if (name != "") {
+				var type = prompt("Type 'file'/'folder': ");
+				if (type != null) {
+					type = type.trim();
+					if (type != "file" && type != "folder") {
+						alert("Invalid entries");
+						return ;
+					} else {
+					var groupname=	document.getElementById('group-name').innerHTML;
+					var rootname=	document.getElementById('root-name').innerHTML;
+					
+					var	path=parentPath;
+	    			console.log("path: "+rootname+"/"+groupname+"/"+groupname+".json");
+	         		
+					$.post("http://localhost:8000",{"name":rootname+"/"+groupname+"/"+groupname+".json","content":"","command":"read","type":"file" },function(data){
+	         			console.log("recieved:"+data);
+	         			group=JSON.parse(data);
+	         			var icon;
+	         			if(type=="file")
+	         				icon="images/fileico.png"
+	         			else if(type=="folder")
+	         				icon="images/folder.png"
+	    				var f=new file(path+"/"+name,path,name,icon); 
+	    				addFile(group,f);
+
+	    				$.post("http://localhost:8000",{"name":rootname+"/"+groupname+"/"+groupname+".json","content":JSON.stringify(group),"command":"write","type":"file"}, function(data){      	
+		    				console.log("recieved: "+data);
+	    				
+		    				$.post("http://localhost:8000",{"name":path+"/"+name,"content":"","command":"write","type":type}, function(data){      	
+		    					console.log("recieved: "+data);
+	    						loadTree(group);
+		    				});
+		    			});	    
+
+          			});
+					}
+				}
+			}
+		}
+	}
+	function renameFile(){
+		var name = prompt("Enter New name: ", "");
+		if (name != null) {
+			name = name.trim();
+			if (name != "") {
+				var	path=parentPath;
+				var type=null;
+				if(parentPath==filePath)
+					type="folder";
+				else
+					type="file";
+				$.post("http://localhost:8000",{"name":path,"content":name,"command":"rename","type":type}, function(data){      	
+		    			console.log("recieved: "+data);
+//	    				loadTree(group);
+		    	});
+		    		    		
+			}
+		}
+	}
+	function deleteFile(){
+		var	path=filePath;
+		var groupname=	document.getElementById('group-name').innerHTML;
+		var rootname=	document.getElementById('root-name').innerHTML;
+				var type=null;
+				if(parentPath==filePath)
+					type="folder";
+				else
+					type="file";
+				console.log("type,path"+type+","+path);
+				$.post("http://localhost:8000",{"name":path,"content":"","command":"delete","type":type}, function(data){      	
+		    			console.log("recieved: "+data);
+		    			console.log("read path:"+rootname+"/"+groupname+"/"+groupname+".json");
+		    		$.post("http://localhost:8000",{"name":rootname+"/"+groupname+"/"+groupname+".json","content":"","command":"read","type":"file"}, function(data){      	
+		    				console.log("recieved: "+data);
+		    				var group=JSON.parse(data);
+		    				var data=group.core.data;
+		    				var index=-1;
+		    				for(var i in data)
+		    					if(path==data[i].id){
+		    						index=i;
+		    						break;
+		    					}
+		    				if(index!=-1){
+		    					data.splice(index,1);
+		    					$.post("http://localhost:8000",{"name":rootname+"/"+groupname+"/"+groupname+".json","content":JSON.stringify(group),"command":"write","type":"file"}, function(data){      	
+		    						console.log("recieved: "+data);
+		    						loadTree(group);
+		    					});							
+		    				}
+
+	    			});		
+		    	});
+	}
+
+	function addMessageToAll(input){
+		root=document.getElementById('msg-container');
+		var text=input.value;
+		text=text.trim();
+		if(text.trim()){
+			input.value="";
+			var name=document.createElement("div");
+			name.innerHTML="Me:";
+			name.style["font-size"]="15px";
+			var child=document.createElement("div");
+			child.innerHTML=text;
+			child.style.border="1px solid black";
+			child.style.padding="2px";
+			child.style.margin="2px";
+			child.style["word-wrap"]="break-word";
+			child.style["font-size"]="14px";
+			color="#d35400";
+			child.style.background=color;
+			child.style.color="white";
+			child.style["font-size"]="14px";
+			root.setAttribute("class","test");
+			root.appendChild(name);	
+			root.appendChild(child);
+			var groupname=	document.getElementById('group-name').innerHTML;
+			var group=peerJSON.getGroup(groupname);
+			for(i=0;i<group.ID.length;++i){
+				if(group.ID[i]!=peerJSON.peer.id)	
+				peerJSON.sendMsg(text,peerJSON.CHAT,group.ID[i],groupname);
+			}
+		}
+		
+
+	}
+	function cancelRequest(){
+		var selectbox=document.getElementById("group-users");
+		var popup=document.getElementById('popup');
+		var req=document.getElementById('req-button');
+		var cancel=document.getElementById('cancel-button');
+		selectbox.style.visibility="hidden";
+		popup.style.visibility="hidden";
+		req.style.visibility="hidden";
+		cancel.style.visibility="hidden";
+		
+	}
+	function listGroupUsers(){
+		var group=peerJSON.getGroup(peerJSON.getCurrentGroupID());
+		var selectbox=document.getElementById("group-users");
+		var popup=document.getElementById('popup');
+		var req=document.getElementById('req-button');
+		var cancel=document.getElementById('cancel-button');
+		selectbox.style.visibility="visible";
+		popup.style.visibility="visible";
+		req.style.visibility="visible";
+		cancel.style.visibility="visible";
+		
+		for(i=0;i<group.ID.length;++i){
+			user=group.ID[i];
+			if(user!=peerJSON.peer.id){
+				var optn = document.createElement("option");
+				optn.text = user;
+				optn.value = user;
+				selectbox.options.add(optn);
+			}
+		}
+	}
+
+	function  addMessage(input,toID){
+		root=document.getElementById('msg-container');
+		var text=input.value;
+		text=text.trim();
+		if(text.trim()){
+			input.value="";
+			peerJSON.sendMsg(text,peerJSON.CHAT,toID,peerJSON.getCurrentGroupID());
+			var name=document.createElement("div");
+			name.innerHTML="Me:";
+			name.style["font-size"]="15px";
+			var child=document.createElement("div");
+			child.innerHTML=text;
+			child.style.border="1px solid black";
+			child.style.padding="2px";
+			child.style.margin="2px";
+			child.style["word-wrap"]="break-word";
+			child.style["font-size"]="14px";
+			color="#d35400";
+			child.style.background=color;
+			child.style.color="white";
+			child.style["font-size"]="14px";
+			root.setAttribute("class","test");
+			root.appendChild(name);	
+			root.appendChild(child);
+			console.log();
+		}
+	}
+	function addUser(input){
+		peerJSON.sendMsg(groupToJSONArray(peerJSON.getGroup(peerJSON.getCurrentGroupID())),peerJSON.REQUEST,input.value,peerJSON.getCurrentGroupID());
+	}
+	function isDupUser(user,array){
+		return false;
+	}
+	function openChatBox(event){
+		var source = event.target || event.srcElement;
+		var chatbox=document.getElementById("chat-box");
+		var user=document.getElementById("user-name");
+		user.innerHTML=source.innerHTML;
+		chatbox.style.visibility="visible";
+	}
+	function closeChat(root){
+		root.style.visibility="hidden";
+	}
+
+	function closeList(elem,button){
+		$(button).click(function () {
+   	});
+	}
+
+	function getFile(){
+        console.log("hello");
+    }  
+
+    function loadGroups(path){
+    	$.post("http://localhost:8000",{"name":path+"/manifest.json","content":"","command":"read",type:"file"}, function(data){      	
+		    	console.log("recieved: "+data);
+		    	if(data[0]!="e"){
+		    		manifest=JSON.parse(data);
+		    		var name=null;
+		    		for(var i in manifest){
+		    			name=manifest[i];
+						text=name;
+    					value=name;
+    					selectbox=document.getElementById("select-group");
+						var optn = document.createElement("option");
+						optn.text = text;
+						optn.value = value;
+						selectbox.options.add(optn);
+						$("#select-group [value='"+text+"']").attr("selected","selected");
+						value=selectbox.value;
+						console.log("selected group:"+value);
+						document.getElementById('group-name').innerHTML=value;			
+						peerJSON.addMember(peerJSON.peer.id,name);				
+					}
+					if(name)
+						$.post("http://localhost:8000",{"name":path+"/"+name+"/"+name+".json","content":"","command":"read",type:"file"}, function(data){      	
+		    					console.log("recieved: "+data);
+								loadTree(JSON.parse(data));
+						});
+				}
+		});
+		
+		$(document).on("change", "#select-group", function () {
+   			selectbox=document.getElementById("select-group");
+			value=selectbox.value;
+			console.log("selected group:"+value);
+			if(peerJSON!=null){
+				var root = document.getElementById("chat-list");
+				while (root.firstChild) {
+    				root.removeChild(root.firstChild);
+				}
+				group=peerJSON.getGroup(value);
+				for(i in group.ID)
+					if(group.ID[i]!=peerJSON.peer.id)	
+						addUser1(group.ID[i]);
+			}
+			$.post("http://localhost:8000",{"name":path+"/"+value+"/"+value+".json","content":"","command":"read",type:"file"}, function(data){     
+		    	console.log("recieved: "+data);
+		    	loadTree(JSON.parse(data));
+		    	addTab(value,"Select a file to load content");
+				document.getElementById('group-name').innerHTML=value;
+
+			});			
+		}); 
+
+
+    }
+    function addGroup(name){
+
+    	if(name!=null){
+    		name=name.trim();
+    		if(name){
+    			text=name;
+    			value=name;
+    			selectbox=document.getElementById("select-group");
+				var optn = document.createElement("option");
+				optn.text = text;
+				optn.value = value;
+				selectbox.options.add(optn);
+				$("#select-group [value='"+text+"']").attr("selected","selected");
+				value=selectbox.value;
+				console.log("selected group:"+value);
+				document.getElementById('group-name').innerHTML=value;			
+				rootName=document.getElementById("root-name").innerHTML;
+				createProject(rootName,name);
+				addTab(name,"Select a file to load content");
+				peerJSON.addMember(peerJSON.peer.id,name);
+			}
+		}
+	}
+	function setRootPath(){
+		rootPath=prompt("Enter project directory path","");
+		if(rootPath){
+			rootPath=rootPath.trim();
+			if(rootPath){
+				document.getElementById("root-name").innerHTML=rootPath;
+				console.log("Your root path:"+rootPath);
+			$.post("http://localhost:8000",{"name":rootPath+"/manifest.json","content":"","command":"read",type:"file"}, function(data){     
+		    	console.log("recieved: "+data);
+		    	if(data[0]=="e"){
+		    		$.post("http://localhost:8000",{"name":rootPath+"/manifest.json","content":"[]","command":"write",type:"file"}, function(data){     
+		    			console.log("recieved: "+data);
+
+		    		});
+		    	}
+		    	loadGroups(rootPath);
+
+			});
+
+
+
+			}
+		}
+	}
+
+	function addGroupChangeListener() 	
+	{
+		$("#logout").click();
+		$(document).on("change", "#group-users", function () {
+
+   		});
+	}
+
+	function sendGetRequest(){
+		toID=document.getElementById('group-users').value;
+		var groupname=peerJSON.getCurrentGroupID();		
+	//	console.log(+","+);
+		if(filePath==rootPath+"/"+groupname){
+			console.log(toID+","+groupname);
+			peerJSON.sendMsg("",peerJSON.GREQUEST,toID,groupname);
+		}
+		else if(filePath!=parentPath){
+			var content=new Object();
+			content.root=rootPath;
+			content.filePath=filePath;
+			peerJSON.sendMsg(JSON.stringify(content),peerJSON.FREQUEST,toID,groupname);
+		}
+	}  
+	</script>
+
+	<div >
+		<div id='notification'>Welcome User</div>
+		<hr/>
+			<button class="border"id="logout" onclick="peerJSON.createPeer(prompt('Enter our ID?',''),this)">Connect</button>
+			<label id="welcome">Welcome User</label>
+			<div style="float:right">RMTCC</div>
+		<hr/>
+	</div>	
+	<div style="float:left">
+		<input type="button" value="Select Path"  onclick="setRootPath()" id="select-path">		
+		<input type="button" value="Create Group" id="create-group" onclick="addGroup(prompt('Group Name? '))">
+		<select id="select-group" >
+		</select>
+	</div>
+	<div style="background:white;clear:both;float:left;margin-top:30px;width:250px;height:450px" class="border">
+		<div  id="root-name">[Root]</div>					
+		<div style="background:#27ae60;color:white;padding:3px;" id="group-name">[Group]</div>
+		<div><input type="button" id="req-content" value="Request Contents" class="butn" style="margin-left:10px;margin-bottom:5px;visibility:hidden" 
+			onclick="listGroupUsers()"/></div>
+			<input type="button" onclick="createFile()"value="Create" id="create-file" class="file-options" />
+    		<input type="button" onclick="renameFile()"value="Rename" id="rename-file" class="file-options"/>
+    		<input type="button" onclick="deleteFile()"value="Delete" id="delete-file" class="file-options"/>
+		<div id="wrapper" style="overflow:scroll;height:350px">
+		</div>
+
+	</div>
+	<div style="background:white;clear:top;margin-top:68px;margin-left:300px;width:50%;height:450px" class="border">
+
+		<div id="tt" class="easyui-tabs" style="width:95%;height:350px;margin:20px;">
+			<div title="Home" >
+				<br>
+				RMTCC
+			</div>
+		</div>
+	</div>	
+	<div id="chat-wrapper" style="clear:both;">
+	<div  class="border" id="chat-box">
+		<div  id="chat-head">
+			<input type="button" value="x" id="close-chat" onclick="closeChat(document.getElementById('chat-box'))">
+			<label id="user-name">Friend</label>
+		</div>
+		<div id="msg-container" >	
+		</div>
+		<table id="msg-bottom">
+			<tr>
+				<td>
+					<input type="text" placeholder="Type message"  id="msg-input" class="border">
+				</td>
+				<td>	
+					<input type="button" id="msg-submit" value="Send" style="width:50px;height:30px" onclick="addMessage(document.getElementById('msg-input'),document.getElementById('user-name').innerHTML)">
+				</td>	
+				<td>
+					<input type="button" id="msg-submit" value="Broad" style="width:50px;height:30px" onclick="addMessageToAll(document.getElementById('msg-input'))">
+					
+				</td>
+			</tr>
+		</table>
+		<input type="button" value="Call" class="call-button" onclick="peerJSON.makeCall(document.getElementById('user-name').innerHTML)">	
+		<input type="button" value="Disconnect" class="call-button" onclick="peerJSON.closeCall()">			
+		<br>	
+		<video   style="margin:2px"id="othervideo" height='130' width='240'></video>
+
+		<video   id="myvideo" height='130' width='140' style="visibility:hidden"></video>
+				<br>	
+
+
+	</div>
+	<div class="border"  id="chat-list-box">
+		<table>
+			<tr>
+				<td>	
+					<input type="text" placeholder="Add New User" class="border" id="add-user-input" />
+				</td>
+				<td>	
+					<input type="button" onclick="addUser(document.getElementById('add-user-input'))" value="Request" id="add-user-submit" />
+				</td>	
+			</tr>	
+		</table>
+		<div   id="chat-list">
+
+		</div>
+
+	</div>
+	</div>
+	<div id="popup" >		
+	</div>	
+	<img src="images/spinner.gif"  id="spinner" style="position:fixed;width:30px;height:30px;margin-left:auto;margin-right:auto;top:50%;left:50%;visibility:hidden;"/>
+	<div  style="position:fixed;width:30px;height:30px;margin-left:auto;margin-right:auto;top:60%;left:50%;"/>
+		<select id="group-users" class="font" style="width:200px;height:30px;visibility:hidden">
+
+		</select>
+		<table>
+		<tr>
+			<td>
+			<input type="button" class="butn" value="Request" onclick="sendGetRequest()" style="visibility:hidden" id="req-button"></td>
+			<td><input type="button" class="butn" value="Cancel" onclick="cancelRequest()"id="cancel-button" style="visibility:hidden"></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

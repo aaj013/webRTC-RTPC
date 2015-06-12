@@ -1,0 +1,14 @@
+<script src="peer.js"></script>
+<script>
+    var sender_id='sender1'; 
+    var reciever_id='reciever1';
+    var peer=new Peer(sender_id,{key:'tsvftd9pn32wewmi'});
+    peer.on('open', function(sender_id) {
+   console.log('My peer ID is: ' + sender_id);
+    });
+    var conn = peer.connect(reciever_id);
+    conn.on('open', function(){
+    conn.send('hi!');
+   console.log('message sent from: ' + sender_id);
+    });
+</script>
